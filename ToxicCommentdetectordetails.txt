@@ -1,0 +1,133 @@
+Title - Toxic Comment Detection Web App
+
+Project Structure
+ToxicCommentDetection/
+│
+├── app.py
+├── train.py
+├── model.pkl
+├── vectorizer.pkl
+├── requirements.txt
+├── runtime.txt
+├── train.csv
+└── README.md
+
+
+codes-
+file1-
+train.py
+code-
+import pandas as pd
+import re
+import joblib
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+# Load dataset
+df = pd.read_csv("train.csv")
+
+# Keep only required columns
+df = df[['comment_text', 'toxic']]
+
+# Remove missing values
+df.dropna(inplace=True)
+
+# Text cleaning function
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'[^a-zA-Z]', ' ', text)
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+# Apply cleaning
+df['comment_text'] = df['comment_text'].apply(clean_text)
+
+# Features and labels
+X = df['comment_text']
+y = df['toxic']
+
+# Convert text into vectors
+vectorizer = TfidfVectorizer(max_features=5000)
+
+X_vectorized = vectorizer.fit_transform(X)
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X_vectorized,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+# Train model
+model = LogisticRegression()
+
+model.fit(X_train, y_train)
+
+# Predictions
+y_pred = model.predict(X_test)
+
+# Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"Accuracy: {accuracy * 100:.2f}%")
+
+# Save model and vectorizer
+joblib.dump(model, "model.pkl")
+joblib.dump(vectorizer, "vectorizer.pkl")
+
+print("Model saved successfully!")
+
+file 2- app.py
+code- 
+import streamlit as st
+import joblib
+import re
+
+# Load model and vectorizer
+model = joblib.load("model.pkl")
+vectorizer = joblib.load("vectorizer.pkl")
+
+# Clean text function
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'[^a-zA-Z]', ' ', text)
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+# App title
+st.title("🛡️ Toxic Comment Detection App")
+
+st.write("Detect whether a comment is Toxic or Non-Toxic")
+
+# User input
+comment = st.text_area("Enter a Comment")
+
+# Prediction
+if st.button("Analyze Comment"):
+
+    if comment.strip() == "":
+        st.warning("Please enter a comment")
+    else:
+        cleaned = clean_text(comment)
+
+        vectorized = vectorizer.transform([cleaned])
+
+        prediction = model.predict(vectorized)[0]
+
+        probability = model.predict_proba(vectorized)[0][1]
+
+        # Progress bar
+        st.progress(int(probability * 100))
+
+        st.write(f"### Toxicity Score: {probability * 100:.2f}%")
+
+        # Result
+        if prediction == 1:
+            st.error("⚠️ Toxic Comment Detected")
+        else:
+            st.success("✅ Non-Toxic Comment")
+deployed on- render
