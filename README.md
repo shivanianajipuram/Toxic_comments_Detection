@@ -9,6 +9,9 @@ The application helps detect harmful, abusive, offensive, or inappropriate comme
 # Dataset Used
 
 The project uses the Jigsaw Toxic Comment Classification Dataset for training the toxicity detection model.
+```bash
+https://www.kaggle.com/datasets/julian3833/jigsaw-toxic-comment-classification-challenge
+```
 
 Dataset contains:
 - User comments
